@@ -855,12 +855,6 @@
         return result;
       }, [chapterFilteredCards, statuses, filter]);
 
-      useEffect(() => {
-        if (filter !== 'all' && filteredCards.length === 0) {
-          setFilter('all');
-        }
-      }, [filter, filteredCards.length]);
-
       if (!currentUser) return <LoginScreen onLogin={handleLogin} />;
 
       const tabs = [
