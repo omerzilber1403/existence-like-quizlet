@@ -162,9 +162,16 @@
     const getUserStatuses = (users, name) => users[name]?.statuses || {};
     const setUserStatuses = (users, name, statuses) => ({ ...users, [name]: { ...users[name], name, statuses } });
 
-    // Cloud Sync Helpers
-    const syncCloudUsers = async () => { try { const r = await fetch('/api/users'); if (r.ok) return await r.json(); } catch (e) { } return null; };
-    const pushCloudUser = async (name, statuses) => { try { await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, statuses }) }); } catch (e) { } };
+    // Cloud Sync Helpers - only work when running on a server (not file://)
+    const isLocalFile = () => window.location.protocol === 'file:';
+    const syncCloudUsers = async () => { 
+      if (isLocalFile()) return null;
+      try { const r = await fetch('/api/users'); if (r.ok) return await r.json(); } catch (e) { } return null; 
+    };
+    const pushCloudUser = async (name, statuses) => { 
+      if (isLocalFile()) return;
+      try { await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, statuses }) }); } catch (e) { } 
+    };
 
     // ── Icons ────────────────────────────────────────────────────────────────────
     const IconCards = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="3" strokeWidth="2" /><line x1="8" y1="4" x2="8" y2="20" strokeWidth="2" /></svg>;
