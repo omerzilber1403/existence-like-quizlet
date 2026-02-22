@@ -321,19 +321,14 @@
         if (tab.key === 'all') {
           // "הכל" - reset everything
           setFilter('all');
-          setChapterFilter([]);
+          setChapterFilter('all');
         } else if (tab.chapter) {
-          // Chapter filter - toggle it (multi-select)
-          const chNum = parseInt(tab.chapter);
-          setChapterFilter(prev => {
-            if (prev.includes(chNum)) {
-              // Remove if already selected
-              return prev.filter(ch => ch !== chNum);
-            } else {
-              // Add if not selected
-              return [...prev, chNum].sort();
-            }
-          });
+          // Chapter filter - toggle it
+          if (chapterFilter === tab.chapter) {
+            setChapterFilter('all');
+          } else {
+            setChapterFilter(tab.chapter);
+          }
         } else {
           // Status filter - toggle it
           if (filter === tab.key) {
@@ -346,10 +341,10 @@
       
       const isActive = (tab) => {
         if (tab.key === 'all') {
-          return filter === 'all' && chapterFilter.length === 0;
+          return filter === 'all' && chapterFilter === 'all';
         }
         if (tab.chapter) {
-          return chapterFilter.includes(parseInt(tab.chapter));
+          return chapterFilter === tab.chapter;
         }
         return filter === tab.key;
       };
@@ -572,14 +567,14 @@
       });
     };
 
-    const TestMode = ({ cards, allCards, filter, chapterFilter, statuses, setStatus }) => {
+    const TestMode = ({ cards, allCards, filter, chapterFilter }) => {
       const [quiz, setQuiz] = useState(null);
       const [answers, setAnswers] = useState({});
       const [submitted, setSubmitted] = useState(false);
       const [shakeSubmit, setShakeSubmit] = useState(false);
       const [count, setCount] = useState(20);
 
-      useEffect(() => { setQuiz(null); setAnswers({}); setSubmitted(false); }, [cards]);
+      useEffect(() => { setQuiz(null); setAnswers({}); setSubmitted(false); }, [filter, chapterFilter]);
 
       const startQuiz = () => { setQuiz(buildQuiz(cards, allCards, count)); setAnswers({}); setSubmitted(false); };
       const pick = (qid, opt) => { if (submitted) return; setAnswers(a => ({ ...a, [qid]: opt })); };
@@ -598,12 +593,7 @@
 
       if (!quiz) {
         const filterParts = [];
-        if (chapterFilter.length > 0) {
-          const chapterText = chapterFilter.length === 1 
-            ? `פרק ${chapterFilter[0]}` 
-            : `פרקים ${chapterFilter.join(', ')}`;
-          filterParts.push(chapterText);
-        }
+        if (chapterFilter !== 'all') filterParts.push(`פרק ${chapterFilter}`);
         if (filter === 'red') filterParts.push('🔴 אדומות');
         else if (filter === 'yellow') filterParts.push('🟡 צהובות');
         else if (filter === 'green') filterParts.push('🟢 ירוקות');
@@ -653,7 +643,6 @@
             <div className="flex flex-col gap-3">
               {quiz.map((q, i) => {
                 const correct = answers[q.id] === q.correct;
-                const cardStatus = statuses[q.id] || 'unmarked';
                 return (
                   <div key={q.id} className={`rounded-2xl p-4 border-2 ${correct ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
                     <div className="flex items-center justify-between mb-1">
@@ -664,8 +653,7 @@
                     </div>
                     <p className="font-semibold text-slate-800 text-sm mb-2 leading-snug">{q.question}</p>
                     {!correct && <div className="text-red-600 text-sm mb-1">❌ ענית: <span className="font-medium">{answers[q.id]}</span></div>}
-                    <div className="text-green-700 text-sm mb-3">✅ נכון: <span className="font-medium">{q.correct}</span></div>
-                    <ConfidenceButtons status={cardStatus} onSet={s => setStatus(q.id, s)} />
+                    <div className="text-green-700 text-sm">✅ נכון: <span className="font-medium">{q.correct}</span></div>
                   </div>
                 );
               })}
@@ -829,7 +817,7 @@
       const [users, setUsers] = useState(() => loadUsers());
       const [allCards] = useState(() => loadData());
       const [filter, setFilter] = useState('all');
-      const [chapterFilter, setChapterFilter] = useState([]);
+      const [chapterFilter, setChapterFilter] = useState('all');
       const [mode, setMode] = useState('flashcards');
 
       const [showNav, setShowNav] = useState(true);
@@ -874,7 +862,7 @@
         clearCurrent();
         setCurrentUser(null);
         setFilter('all');
-        setChapterFilter([]);
+        setChapterFilter('all');
         setMode('flashcards');
       };
 
@@ -890,8 +878,8 @@
 
       // Filter by chapter first
       const chapterFilteredCards = useMemo(() => {
-        if (chapterFilter.length === 0) return allCards;
-        return allCards.filter(c => chapterFilter.includes(c.chapter));
+        if (chapterFilter === 'all') return allCards;
+        return allCards.filter(c => c.chapter === parseInt(chapterFilter));
       }, [allCards, chapterFilter]);
 
       // Counts for status filters (based on current chapter filter)
@@ -938,7 +926,7 @@
                   <h1 className="text-xl font-black text-slate-800">🌿 Sustainability</h1>
                   <p className="text-xs text-slate-400">
                     {allCards.length} שאלות
-                    {(chapterFilter.length > 0 || filter !== 'all') && ` • ${filteredCards.length} מוצגות`}
+                    {(chapterFilter !== 'all' || filter !== 'all') && ` • ${filteredCards.length} מוצגות`}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -975,7 +963,7 @@
 
             <div className="pb-10">
               {mode === 'flashcards' && <FlashcardsMode cards={filteredCards} statuses={statuses} setStatus={setStatus} />}
-              {mode === 'test' && <TestMode cards={filteredCards} allCards={allCards} filter={filter} chapterFilter={chapterFilter} statuses={statuses} setStatus={setStatus} />}
+              {mode === 'test' && <TestMode cards={filteredCards} allCards={allCards} filter={filter} chapterFilter={chapterFilter} />}
               {mode === 'list' && <ListMode cards={filteredCards} statuses={statuses} />}
             </div>
           </div>
