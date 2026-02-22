@@ -567,7 +567,7 @@
       });
     };
 
-    const TestMode = ({ cards, allCards, filter, chapterFilter }) => {
+    const TestMode = ({ cards, allCards, filter, chapterFilter, statuses, setStatus }) => {
       const [quiz, setQuiz] = useState(null);
       const [answers, setAnswers] = useState({});
       const [submitted, setSubmitted] = useState(false);
@@ -643,6 +643,7 @@
             <div className="flex flex-col gap-3">
               {quiz.map((q, i) => {
                 const correct = answers[q.id] === q.correct;
+                const cardStatus = statuses[q.id] || 'unmarked';
                 return (
                   <div key={q.id} className={`rounded-2xl p-4 border-2 ${correct ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
                     <div className="flex items-center justify-between mb-1">
@@ -653,7 +654,8 @@
                     </div>
                     <p className="font-semibold text-slate-800 text-sm mb-2 leading-snug">{q.question}</p>
                     {!correct && <div className="text-red-600 text-sm mb-1">❌ ענית: <span className="font-medium">{answers[q.id]}</span></div>}
-                    <div className="text-green-700 text-sm">✅ נכון: <span className="font-medium">{q.correct}</span></div>
+                    <div className="text-green-700 text-sm mb-3">✅ נכון: <span className="font-medium">{q.correct}</span></div>
+                    <ConfidenceButtons status={cardStatus} onSet={s => setStatus(q.id, s)} />
                   </div>
                 );
               })}
@@ -963,7 +965,7 @@
 
             <div className="pb-10">
               {mode === 'flashcards' && <FlashcardsMode cards={filteredCards} statuses={statuses} setStatus={setStatus} />}
-              {mode === 'test' && <TestMode cards={filteredCards} allCards={allCards} filter={filter} chapterFilter={chapterFilter} />}
+              {mode === 'test' && <TestMode cards={filteredCards} allCards={allCards} filter={filter} chapterFilter={chapterFilter} statuses={statuses} setStatus={setStatus} />}
               {mode === 'list' && <ListMode cards={filteredCards} statuses={statuses} />}
             </div>
           </div>
